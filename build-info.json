@@ -1,6 +1,6 @@
 {
-  "version": "0.6.0",
-  "buildId": "e4d2d40e88408b08",
+  "version": "0.6.1",
+  "buildId": "47a4125064c99e9f",
   "files": {
     ".nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "config.json": "7654806741c4ce04ced2f45eec334079565485187288957cf7771039ae98dab2",
@@ -27,16 +27,17 @@
     "src/domain/sort.js": "95a7685a56998ca4504ded7d0d42abf94c44ba83bad826c788129e810bb1e9ea",
     "src/domain/state.js": "72ef47bd5de4520f44a59e1dff36526266c810921133dae27ddd868c5b5137a2",
     "src/domain/when.js": "496cd6a050892787d7faef79003cca83c9d513a27352b1a0ac3a44dcf8840b10",
-    "src/main.js": "be1b75f842f1ae89ec7c7130bf79d175b1c79204b60d4354c0c1edec6350b519",
+    "src/editing.js": "6c03372e74755c05a9d069cdec93ad3e70b3a26e05d85a2660e979305b897c24",
+    "src/main.js": "36498dbe067b80c33d01f07fc63c9469eaf16c0819601795833ff7cefdb6c9cd",
     "src/sort-view.js": "5373d6b5ba2f14504d1f965f643bd8827df802552a7a4f15b519256a0a019998",
-    "src/styles.css": "1e4f81a0ca229c638e0bbdf05e39166ea61e6667fb098f8ca09d994a1e918eb9",
+    "src/styles.css": "80df19eaecb3d48d9d3c5f66df603ce9172dd792b9c3b90874916a6293e530ce",
     "src/ui.js": "7f77bdc94ffdca7ea14f0e776850bb491f8f92a15f0630d4b2dce09e966c6559",
     "src/views/events.js": "86a9b92ef13544db8bb96e3669c2adf32869ce4b7f70d9eacb2ea354d92d4132",
     "src/views/ideas.js": "4793d9d899f33613c007bd63b3cbf68e8bddc789498c9f73161ecd8579c8ae73",
-    "src/views/inbox.js": "5f0a599f98fb55c27859fc0a0b42a876f4f4d0487e7e5a0b804540df51e8193d",
+    "src/views/inbox.js": "0b35887f35c89d013d1f71bcc69589f8b7b4f396d3ebaef3415bd6ee5c8c7812",
     "src/views/meds.js": "107ae927183895f0c5f160f731d2c4eace4e31e49f7328e69968e95236d9334e",
-    "src/views/todos.js": "c4126c6db32714e108a4587f14062ed1dc0e236ba466392808a2439f1827ea70",
-    "sw.js": "784ed410d0b5afc2f498eeede67efe491ccc07ca2dad9d37f1bcdf3e2c43def6",
+    "src/views/todos.js": "95e754d6c2146cb22f380a4161747f82634090cd5706b3e408ff79aefb2a46da",
+    "sw.js": "43f1779db460bf84f007e97e23ba09d2111321f511713f68ea717917be58258e",
     "_headers": "0891b9a761d08bee860dea0d31e34e8aa4c9613f740c9f35f246f94b12226502"
   }
 }

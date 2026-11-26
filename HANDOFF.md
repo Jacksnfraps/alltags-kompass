@@ -1,6 +1,6 @@
 # HANDOFF – Alltags- & Ideen-Kompass
 
-> **Aktueller Stand: v0.6.0 – siehe Abschnitt „v0.6.0 – eigener Gemini-Key im Konto“ ganz am Ende** (davor „v0.5.0 – freie Listen-Erkennung“ und „v0.4.0 – dritte iPhone-Runde“). Frühere Runden: Abschnitte „Übernahme durch Claude – v0.3.0“, „v0.3.1 – iPhone-Rückmeldungen“ und „v0.3.2 – zweite iPhone-Runde“ am Ende dieser Datei.** Alles davor ist Codex-Historie.
+> **Aktueller Stand: v0.6.1 – siehe Abschnitt „v0.6.1 – ruhige Aktualisierung, Listen-Eingabe, Listen auf Start“ ganz am Ende** (davor Termin-UX, Key-Fix und „v0.6.0 – eigener Gemini-Key im Konto“) (davor „v0.5.0 – freie Listen-Erkennung“ und „v0.4.0 – dritte iPhone-Runde“). Frühere Runden: Abschnitte „Übernahme durch Claude – v0.3.0“, „v0.3.1 – iPhone-Rückmeldungen“ und „v0.3.2 – zweite iPhone-Runde“ am Ende dieser Datei.** Alles davor ist Codex-Historie.
 
 ## Schritt 1: Initialisierung
 Projektpfad: outputs/alltags-kompass. Angelegt: HANDOFF.md.
@@ -625,3 +625,24 @@ Erster Testlauf: 67/70 bestanden. Zwei alte Erwartungen (benanntes Kind als kids
 Build e4d2d40e88408b08, 36 Dateien, Secret-Scanner bestanden. Keine neue SQL-Migration nötig. Browserwerkzeug musste einmal neu initialisiert werden, keine App-Störung. Nächster Schritt: vollständigen Build auf origin/main veröffentlichen, Pages-Erfolg und alle Live-Dateihashes prüfen.
 
 Release-Prüfung: falschen URL-Basistyp im einmaligen Prüfskript korrigiert, HANDOFF-Zeilenenden LF normalisiert. Keine App-Datei betroffen.
+
+## Termin-UX veröffentlicht – 26.11.2026
+Commit 0d86f815203dc371ce15918658983f6f271839d1 auf origin/main. Pages-Workflow 45780033538 erfolgreich. Live Build e4d2d40e88408b08: alle 36 App-Dateien per HTTP/SHA256 identisch zum dist; Bericht LIVE-PRUEFUNG.json. Workflow-Metadaten zeigten noch vorherigen Head, maßgeblicher Live-Dateivergleich bestätigt neuen Stand. 76 Tests erfolgreich; keine Secrets in dist oder Git-Index, keine kostenpflichtigen Dienste aktiviert. Abschließender Handoff-Nachtrag lokal; Implementierung und Prüfstand im Repository veröffentlicht. Exakter nächster Schritt: auf echtem iPhone Live-App neu laden; Dienste, Tonnenkalender, Kindernamenfilter und Cloud-Badges prüfen. Test-Chor mit konkretem Datum ausnehmen, danach über Terminmenü > Ausnahmen wieder zulassen. Keine SQL-Änderung erforderlich. Kein weiteres Teilpaket begonnen.
+
+## v0.6.1 – ruhige Aktualisierung, Listen-Eingabe, Listen auf Start (27.11.2026)
+Rahmen: `JF-AI`/`JF Darts` nicht angefasst, 0 €, keine Anmeldung, keine Migration nötig. **Noch nicht veröffentlicht** (dieser Arbeitsordner ist kein Git-Checkout; Release über den bisherigen Weg: build:static, push, Pages-/Hash-Prüfung).
+
+Problem (iPhone): Die Ansicht wurde ständig komplett neu aufgebaut (Sync alle 30 s und bei jedem Realtime-Signal, auch ohne Änderung; Rückkehr in die App; 5-Minuten-Uhr). Dabei gingen Eingaben verloren (Termin: Titel weg beim Einstellen der Uhrzeit) und nach „＋“ in einer Liste musste man wieder ins Feld tippen.
+
+Lösung (`src/editing.js`, eingebunden in `render`/`refresh` in `src/main.js`):
+- Hintergrund-Aktualisierungen (`refresh({background:true})`) zeichnen **nur bei echten Datenänderungen** neu (Vergleich des Zustands). Während ein Feld der Ansicht fokussiert ist oder ungespeicherte Eingaben enthält (höchstens 3 Minuten), wird **gewartet**; danach wird einmal nachgezogen.
+- Eigene Aktionen zeichnen sofort neu, aber das Formular, in dem gerade getippt wird, bleibt **derselbe DOM-Knoten** (Fokus, iPhone-Tastatur und Text bleiben); alles drumherum wird neu aufgebaut. Ungespeicherte Eingaben in anderen Formularen werden in die neue Ansicht übernommen.
+- Formulare `.add-step` (Listen, Einkauf, Aufgaben, Projektschritte, neue Liste): nach Enter/„＋“ wird das Feld geleert und behält den Fokus → mehrere Einträge hintereinander. Andere Formulare („Speichern“) werden danach frisch aufgebaut.
+- **Listen auf der Startseite:** Schalter „☆ Auf Start“ / „★ Auf Start“ in der Kopfzeile jeder Liste (`pinned` an der Liste, synchronisiert über das Operationslog, also auf allen Geräten gleich). Auf „Überblick“ erscheint unter den Kacheln je angehefteter Liste eine Karte mit Eingabefeld, offenen Einträgen zum Abhaken, Anzahl abgehakt und „Öffnen“. Archivierte Listen verschwinden auch vom Start.
+- Version 0.6.1, Service-Worker-Cache v15 (`editing.js` im Offline-Paket).
+
+Geprüft:
+- `npm test`: **80/80** (neu `tests/v061.test.mjs`: Warten beim Tippen inkl. 3-Minuten-Grenze, Leeren nach Enter, Hintergrundpfade, Anheften/Abheften/Archivieren).
+- Browser 375 px (Testport 4180): Zahnbürste/Handtuch/Buch mit Enter nacheinander ohne erneutes Antippen eingetragen, Fokus blieb. Termin-Titel getippt, Uhrzeit fokussiert, in einem zweiten Tab (gleicher Speicher) neuer Termin angelegt → erster Tab blieb unverändert, Titel und Uhrzeit erhalten; nach „Eintragen“ beide Termine sichtbar, Formular leer. Liste angeheftet → Karte auf dem Start, Eintrag dort hinzugefügt, Fokus blieb. Kein seitliches Scrollen; Konsole nur die bekannten 422.
+
+Offen: echtes iPhone (Tastatur bleibt offen nach Enter? – im Desktop-Browser bestätigt, iOS-Verhalten nur auf dem Gerät prüfbar), angemeldeter Zwei-Geräte-Sync. Veröffentlichung auf GitHub Pages steht aus.

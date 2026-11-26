@@ -15,8 +15,9 @@ import {renderIdeas} from './views/ideas.js';
 import {renderTodos} from './views/todos.js';
 import {renderEvents} from './views/events.js';
 import {renderMeds} from './views/meds.js';
+import {createEditGuard} from './editing.js';
 
-const VERSION='0.6.0';
+const VERSION='0.6.1';
 const $=id=>document.getElementById(id);
 const status=text=>{$('save-status').textContent=text;};
 const VIEWS={inbox:['Überblick',renderInbox],ideas:['Ideen & Projekte',renderIdeas],todos:['To-dos & Listen',renderTodos],events:['Termine & Rhythmen',renderEvents],meds:['Tabletten-Zähler',renderMeds]};
@@ -34,6 +35,7 @@ function userAi(){
 }
 function aiBadge(){$('ai-state').textContent=ctx.aiAllowed()?'KI an':'';}
 async function loadAiKey(){aiKeys=new AiKeyStore(cloud);await aiKeys.load();aiBadge();}
+const editGuard=createEditGuard(()=>document.getElementById('view-content'));
 const ui={view:'inbox',...read('kompass.ui',{})};if(!VIEWS[ui.view])ui.view='inbox';
 const settings={partner:'Vanessa',kids:'',...read('kompass.settings',{})};
 const peopleOptions=()=>({partner:settings.partner,kids:settings.kids.split(',').map(s=>s.trim()).filter(Boolean)});
@@ -245,12 +247,21 @@ function render({keepFocus}={}){
   // Keep labelled <details> (e.g. "Erledigt (3)") open across re-renders after small patches.
   const key=d=>{const t=d.querySelector(':scope>summary')?.textContent.replace(/\(\d+\)/g,'').trim();return t&&t.length>2?t:null;};
   const open=new Set([...content.querySelectorAll('details[open]')].map(key).filter(Boolean));
-  content.replaceWith(next);
-  for(const d of next.querySelectorAll('details'))if(open.has(key(d)))d.open=true;
+  // The form being typed in survives (focus, keyboard, typed text); everything around it is rebuilt.
+  editGuard.take();editGuard.swap(content,next);
+  for(const d of content.querySelectorAll('details'))if(open.has(key(d)))d.open=true;
   window.scrollTo({top:scroll});
-  if(keepFocus){const el=next.querySelector(`.${keepFocus}`);if(el){el.focus();if(caret!=null)el.setSelectionRange(caret,caret);}}
+  if(keepFocus){const el=content.querySelector(`.${keepFocus}`);if(el&&el!==document.activeElement){el.focus();if(caret!=null)el.setSelectionRange(caret,caret);}}
 }
-async function refresh(){const target=store;const version=++renderVersion;const nextState=await target.state();if(target!==store||version!==renderVersion)return;state=nextState;render();}
+// Background updates (sync, realtime, app back in front, clock) never interrupt typing:
+// unchanged data -> no re-render at all; while typing -> render once typing is done.
+let lastSignature='';
+function backgroundRender(){if(!editGuard.defer())render();}
+async function refresh({background=false}={}){
+  const target=store;const version=++renderVersion;const nextState=await target.state();if(target!==store||version!==renderVersion)return;
+  const signature=JSON.stringify(nextState);const changed=signature!==lastSignature;lastSignature=signature;state=nextState;
+  if(!background)render();else if(changed||editGuard.pending)backgroundRender();
+}
 function connection(text,kind=''){const c=$('connection');c.textContent=text;c.dataset.kind=kind;}
 async function queueStatus(){
   if(!store)return;const target=store;const count=(await target.operations()).filter(x=>x.pending).length;
@@ -398,7 +409,7 @@ async function switchStore(){
   $('account-hint').textContent=cloud.session?cloud.session.user.email:'Gastmodus';
   // Key of this account (Supabase) or of guest mode (this device). Never blocks the start.
   await loadAiKey().catch(()=>{});
-  if(cloud.session){const target=store;sync=new Synchronizer(target,cloud,async()=>{if(store===target)await refresh();},text=>{if(store===target)connection(text,'sync');});sync.start();}
+  if(cloud.session){const target=store;sync=new Synchronizer(target,cloud,async()=>{if(store===target)await refresh({background:true});},text=>{if(store===target)connection(text,'sync');});sync.start();}
 }
 
 // ---------- capture ----------
@@ -434,7 +445,7 @@ document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if
 window.addEventListener('offline',()=>connection('Offline · lokal gesichert','local'));
 window.addEventListener('online',()=>{if(sync)sync.run();else queueStatus().catch(error=>status(error.message));if(cloud?.session)aiKeys?.load().then(aiBadge).catch(()=>{});});
 let keyChecked=Date.now();
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){refresh().catch(error=>status(error.message));autoTrashSync();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){refresh({background:true}).catch(error=>status(error.message));autoTrashSync();
   // A key saved on another device arrives here when the app comes back to the front (at most every 10 min).
   if(cloud?.session&&Date.now()-keyChecked>10*60e3){keyChecked=Date.now();aiKeys?.load().then(aiBadge).catch(()=>{});}}});
 // iPhone keyboard: the capture bar sits above the bottom tabs. While the on-screen keyboard is open,
@@ -453,7 +464,12 @@ $('dump').addEventListener('blur',()=>{document.body.classList.remove('dump-focu
 // Only one "⋯" menu at a time.
 document.addEventListener('toggle',e=>{const d=e.target;if(d instanceof HTMLDetailsElement&&d.open&&d.classList.contains('more'))document.querySelectorAll('details.more[open]').forEach(o=>{if(o!==d&&!o.contains(d))o.open=false;});},true);
 // Day change while open (meds "heute", agenda): re-render every few minutes.
-setInterval(()=>{if(ready&&!document.hidden)render();},5*60*1000);
+setInterval(()=>{if(ready&&!document.hidden)backgroundRender();},5*60*1000);
+// Typing finished (focus left the view's fields) -> apply a deferred background update.
+document.addEventListener('input',e=>editGuard.markInput(e),true);
+document.addEventListener('change',e=>editGuard.markInput(e),true);
+document.addEventListener('submit',e=>editGuard.afterSubmit(e));
+document.addEventListener('focusout',()=>setTimeout(()=>{if(ready&&editGuard.pending&&!editGuard.editing())render();},300));
 
 async function boot(){
   config=read('kompass.config',{});

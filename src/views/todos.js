@@ -58,6 +58,31 @@ function toggleItem(ctx,item,checked){
   const complete=all.every(n=>names.has(n));
   ctx.patch(e.id,{items_done:[...names],status:complete?'done':'open',done_at:complete?new Date().toISOString():null});
 }
+// One add form for a list (lists tab and start page). After Enter the field is emptied and keeps
+// focus (see src/editing.js), so several items can be typed in a row.
+function listAddForm(list,ctx){
+  const add=h('form',{class:'add-step',onsubmit:e=>{e.preventDefault();const v=add.querySelector('input').value.trim();if(!v)return;
+    const names=v.split(/,| und /).map(x=>x.trim()).filter(Boolean);
+    ctx.quickAdd('todo',`${v} auf Liste ${list.title}`,{category:'list',list_id:list.id,minutes:15,items:names,title:names.join(', ')});}},
+    h('input',{class:'inp sm',placeholder:`Auf „${list.title}“ …`,'aria-label':`Zur Liste ${list.title} hinzufügen`,enterkeyhint:'enter',autocomplete:'off'}),h('button',{class:'btn sm'},'＋'));
+  return add;
+}
+const listRow=(ctx,item)=>h('label',{class:`shop-item${item.done?' done':''}`},h('input',{type:'checkbox',class:'check',checked:item.done,onchange:ev=>toggleItem(ctx,item,ev.target.checked)}),h('span',{},item.name));
+// Start-page toggle; stored on the list itself, so it is the same on every device.
+const pinButton=(list,ctx)=>h('button',{type:'button',class:`btn sm ghost pin${list.pinned?' on':''}`,'aria-pressed':String(!!list.pinned),title:list.pinned?'Von der Startseite nehmen':'Auf der Startseite zeigen',
+  onclick:()=>ctx.patchList(list.id,{pinned:!list.pinned})},list.pinned?'★ Auf Start':'☆ Auf Start');
+// Compact list card for the start page: open items, add field, done count, link to the full list.
+export function listCard(list,ctx){
+  const todos=Object.values(ctx.state.entry).filter(e=>e.kind==='todo');
+  const items=listItems(todos,list.id);const open=items.filter(i=>!i.done),done=items.filter(i=>i.done);
+  return h('section',{class:'panel list-card','aria-label':`Liste ${list.title}`},
+    h('div',{class:'panel-head'},h('h2',{},'☰ ',list.title),h('span',{class:'count'},String(open.length)),
+      h('button',{type:'button',class:'btn sm ghost',onclick:()=>{ctx.ui.listId=list.id;ctx.navigate('todos','lists');}},'Öffnen')),
+    listAddForm(list,ctx),
+    open.length?h('div',{class:'shop-grid'},open.map(item=>listRow(ctx,item))):empty(done.length?'Alles abgehakt.':'Noch leer.'),
+    done.length?h('p',{class:'muted sm'},`${done.length} abgehakt`):null);
+}
+export const pinnedLists=state=>activeLists(state).filter(l=>l.pinned);
 function listsPane(todos,ctx){
   const {ui,state}=ctx;const lists=activeLists(state);
   if(ui.listId&&!lists.some(l=>l.id===ui.listId))ui.listId=null;
@@ -69,11 +94,8 @@ function listsPane(todos,ctx){
     empty('Noch keine eigenen Listen. Lege z. B. „Tasche Alfsee“ an – oder sprich einfach „Föhn mit zum Alfsee nehmen“ bzw. „Föhn auf Liste Tasche Alfsee“.'),newList);
   const items=listItems(todos,current.id);const open=items.filter(i=>!i.done),done=items.filter(i=>i.done);
   const entries=[...new Set(items.map(i=>i.entry))];
-  const add=h('form',{class:'add-step',onsubmit:e=>{e.preventDefault();const v=add.querySelector('input').value.trim();if(!v)return;
-    const names=v.split(/,| und /).map(x=>x.trim()).filter(Boolean);
-    ctx.quickAdd('todo',`${v} auf Liste ${current.title}`,{category:'list',list_id:current.id,minutes:15,items:names,title:names.join(', ')});}},
-    h('input',{class:'inp sm',placeholder:`Auf „${current.title}“ …`,'aria-label':`Zur Liste ${current.title} hinzufügen`}),h('button',{class:'btn sm'},'＋'));
-  const row=item=>h('label',{class:`shop-item${item.done?' done':''}`},h('input',{type:'checkbox',class:'check',checked:item.done,onchange:ev=>toggleItem(ctx,item,ev.target.checked)}),h('span',{},item.name));
+  const add=listAddForm(current,ctx);
+  const row=item=>listRow(ctx,item);
   const menu=actionMenu('Listen-Optionen',[
     h('div',{class:'row-form'},
       h('button',{type:'button',class:'btn sm ghost',onclick:()=>{const v=prompt('Liste umbenennen:',current.title);if(v&&v.trim())ctx.patchList(current.id,{title:v.trim()});}},'Umbenennen'),
@@ -82,7 +104,7 @@ function listsPane(todos,ctx){
   return h('section',{class:`panel pane${ui.todoPane==='lists'?' on':''}`},head,
     h('div',{class:'chips-filter list-chips',role:'group','aria-label':'Liste wählen'},lists.map(l=>{const n=listItems(todos,l.id).filter(i=>!i.done).length;
       return h('button',{type:'button',class:`fchip${l.id===current.id?' on':''}`,'aria-pressed':String(l.id===current.id),onclick:()=>{ui.listId=l.id;ctx.rerender();}},l.title,h('span',{class:'n'},String(n)));})),
-    h('div',{class:'panel-head'},h('span',{class:'lbl'},current.title),menu),
+    h('div',{class:'panel-head'},h('span',{class:'lbl'},current.title),pinButton(current,ctx),menu),
     add,open.length?h('div',{class:'shop-grid'},open.map(row)):empty(done.length?'Alles abgehakt.':'Diese Liste ist noch leer.'),
     done.length?h('div',{class:'shop-done'},h('div',{class:'panel-head'},h('span',{class:'lbl'},`Abgehakt (${done.length})`),
       h('button',{type:'button',class:'btn sm ghost',onclick:()=>ctx.patchMany(entries.filter(e=>itemsOf(e).every(n=>done.some(d=>d.entry===e&&d.name===n))).map(e=>[e.id,{cleared:true,status:'done'}]))},'Abgehakte entfernen')),

@@ -410,3 +410,10 @@ dialog::backdrop{background:#000b}
  #ai-state{grid-row:2;grid-column:1 / 3}#connection{grid-row:3;grid-column:1 / -1}
  .event-toolbar .seg{width:100%}.event-toolbar .seg button{flex:1;padding:7px;font-size:.8rem}
 }
+/* v0.6.1: lists pinned to the start page */
+.pinned-lists{margin-bottom:12px}
+.list-card .panel-head h2{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list-card .panel-head .btn{margin-left:auto}
+.btn.pin{white-space:nowrap}
+.btn.pin.on{color:var(--warn);border-color:var(--warn-line)}
+@media (min-width:760px){.pinned-lists{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}}

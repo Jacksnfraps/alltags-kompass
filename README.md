@@ -1,4 +1,4 @@
-# Aktueller Stand: v0.6.0
+# Aktueller Stand: v0.6.1
 
 Kompakte PWA mit fünf Bereichen (Eingang, Ideen & Projekte, To-dos inkl. Einkauf, eigene Listen und Anrufe, Termine & Rhythmen inkl. Müll/Dienstplan, Tabletten-Zähler). Gedanken werden ohne Sortierzwang gesichert und automatisch lokal einsortiert; das Original bleibt vollständig erhalten. 65 automatisierte Tests bestehen. KI-Sortierung optional mit eigenem Gemini-Key (⚙ Einstellungen, im Konto gespeichert). Start/Sync: [EINRICHTUNG.md](EINRICHTUNG.md); Arbeitsstand und offene Punkte: [HANDOFF.md](HANDOFF.md). Live-Supabase, echter Gemini-Aufruf und echter iPhone-Test sind noch offen. Der historische Abschnitt unten beschreibt v0.1.
 

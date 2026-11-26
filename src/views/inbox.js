@@ -1,7 +1,7 @@
 import {h,kindPatch,displayTitle,VIEW_OF,KIND_ICON,whenLabel,dayLabel,timeLabel,empty,isSnoozed} from '../ui.js';
 import {kindNames,localSort,normalize} from '../domain/sort.js';
 import {occurrences,stockStatus,localDay} from '../domain/state.js';
-import {shoppingList,listItems,activeLists} from './todos.js';
+import {shoppingList,listItems,activeLists,listCard,pinnedLists} from './todos.js';
 import {nextPerBin} from '../domain/ics.js';
 
 // Archive of originals: collapsed unless opened in this session or a search is active.
@@ -118,5 +118,7 @@ export function renderInbox(root,ctx){
     }):empty(q?'Kein Gedanke passt zur Suche.':'Hier ist Platz für alles, was dich beschäftigt. Der Originaltext bleibt immer vollständig erhalten.')):null);
 
   // "Kurz klären" only appears when something is genuinely unclear; the tile already says "alles zugeordnet".
-  root.append(overview(ctx),h('div',{class:`cols inbox-cols${review.length?'':' single'}`},review.length?reviewBox:null,list));
+  // Lists pinned via "☆ Auf Start" (e.g. a packing list before a trip) sit right below the tiles.
+  const pinned=pinnedLists(state);
+  root.append(overview(ctx),pinned.length?h('div',{class:'cols pinned-lists'},pinned.map(l=>listCard(l,ctx))):null,h('div',{class:`cols inbox-cols${review.length?'':' single'}`},review.length?reviewBox:null,list));
 }
