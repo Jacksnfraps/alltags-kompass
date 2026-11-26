@@ -17,7 +17,7 @@ import {renderEvents} from './views/events.js';
 import {renderMeds} from './views/meds.js';
 import {createEditGuard} from './editing.js';
 
-const VERSION='0.6.1';
+const VERSION='0.6.2';
 const $=id=>document.getElementById(id);
 const status=text=>{$('save-status').textContent=text;};
 const VIEWS={inbox:['Überblick',renderInbox],ideas:['Ideen & Projekte',renderIdeas],todos:['To-dos & Listen',renderTodos],events:['Termine & Rhythmen',renderEvents],meds:['Tabletten-Zähler',renderMeds]};

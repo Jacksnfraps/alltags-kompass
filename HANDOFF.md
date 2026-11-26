@@ -630,7 +630,7 @@ Release-Prüfung: falschen URL-Basistyp im einmaligen Prüfskript korrigiert, HA
 Commit 0d86f815203dc371ce15918658983f6f271839d1 auf origin/main. Pages-Workflow 45780033538 erfolgreich. Live Build e4d2d40e88408b08: alle 36 App-Dateien per HTTP/SHA256 identisch zum dist; Bericht LIVE-PRUEFUNG.json. Workflow-Metadaten zeigten noch vorherigen Head, maßgeblicher Live-Dateivergleich bestätigt neuen Stand. 76 Tests erfolgreich; keine Secrets in dist oder Git-Index, keine kostenpflichtigen Dienste aktiviert. Abschließender Handoff-Nachtrag lokal; Implementierung und Prüfstand im Repository veröffentlicht. Exakter nächster Schritt: auf echtem iPhone Live-App neu laden; Dienste, Tonnenkalender, Kindernamenfilter und Cloud-Badges prüfen. Test-Chor mit konkretem Datum ausnehmen, danach über Terminmenü > Ausnahmen wieder zulassen. Keine SQL-Änderung erforderlich. Kein weiteres Teilpaket begonnen.
 
 ## v0.6.1 – ruhige Aktualisierung, Listen-Eingabe, Listen auf Start (27.11.2026)
-Rahmen: `JF-AI`/`JF Darts` nicht angefasst, 0 €, keine Anmeldung, keine Migration nötig. **Noch nicht veröffentlicht** (dieser Arbeitsordner ist kein Git-Checkout; Release über den bisherigen Weg: build:static, push, Pages-/Hash-Prüfung).
+Rahmen: `JF-AI`/`JF Darts` nicht angefasst, 0 €, keine Anmeldung, keine Migration nötig. Veröffentlicht am 27.11.2026 (siehe „v0.6.1 veröffentlicht“ unten).
 
 Problem (iPhone): Die Ansicht wurde ständig komplett neu aufgebaut (Sync alle 30 s und bei jedem Realtime-Signal, auch ohne Änderung; Rückkehr in die App; 5-Minuten-Uhr). Dabei gingen Eingaben verloren (Termin: Titel weg beim Einstellen der Uhrzeit) und nach „＋“ in einer Liste musste man wieder ins Feld tippen.
 
@@ -645,4 +645,12 @@ Geprüft:
 - `npm test`: **80/80** (neu `tests/v061.test.mjs`: Warten beim Tippen inkl. 3-Minuten-Grenze, Leeren nach Enter, Hintergrundpfade, Anheften/Abheften/Archivieren).
 - Browser 375 px (Testport 4180): Zahnbürste/Handtuch/Buch mit Enter nacheinander ohne erneutes Antippen eingetragen, Fokus blieb. Termin-Titel getippt, Uhrzeit fokussiert, in einem zweiten Tab (gleicher Speicher) neuer Termin angelegt → erster Tab blieb unverändert, Titel und Uhrzeit erhalten; nach „Eintragen“ beide Termine sichtbar, Formular leer. Liste angeheftet → Karte auf dem Start, Eintrag dort hinzugefügt, Fokus blieb. Kein seitliches Scrollen; Konsole nur die bekannten 422.
 
-Offen: echtes iPhone (Tastatur bleibt offen nach Enter? – im Desktop-Browser bestätigt, iOS-Verhalten nur auf dem Gerät prüfbar), angemeldeter Zwei-Geräte-Sync. Veröffentlichung auf GitHub Pages steht aus.
+Offen: echtes iPhone (Tastatur bleibt offen nach Enter? – im Desktop-Browser bestätigt, iOS-Verhalten nur auf dem Gerät prüfbar), angemeldeter Zwei-Geräte-Sync.
+
+## v0.6.1 veröffentlicht – 27.11.2026
+Auf ausdrücklichen Wunsch veröffentlicht. Build im Projektordner (`node scripts/build-static.mjs`: 0.6.1 / Build-ID 47a4125064c99e9f, 37 Dateien, Secret-Prüfung bestanden), Inhalt von dist plus Skripte, Tests, Migrationen und Doku in den Checkout `work/alltags-kompass-publish` übernommen (vorher geprüft: dort nur Unterschiede aus v0.6.1, sonst zeilenendengleich). `.env` nicht kopiert. 80/80 Tests auch im Checkout. Commit 7a49be1 auf origin/main, Pages-Workflow 45911149911 success. Live https://jacksnfraps.github.io/alltags-kompass/ liefert build-info 0.6.1 / 47a4125064c99e9f; alle 37 Dateien per HTTP/SHA-256 identisch. Live-Seite lädt, main.js 0.6.1 mit Eingabeschutz; Konsole nur der erwartete 404 auf /api/config (Fallback config.json). Keine Anmeldung, keine Kontodaten verändert. Dieser HANDOFF-Nachtrag liegt nur lokal (nicht erneut gepusht).
+Nächster Schritt für Jan: Live-App auf dem iPhone neu laden (ggf. App einmal schließen; Cache v15), dann Liste mit mehreren Einträgen per Enter füllen, Termin mit Uhrzeit eintragen, Liste per „☆ Auf Start“ anheften.
+
+## v0.6.2 – Listen untereinander (27.11.2026)
+Listeneinträge (eigene Listen, Start-Karten und Einkauf) stehen jetzt untereinander statt zweispaltig, mit feiner Trennlinie (`.shop-grid` in src/styles.css, eine Spalte). Version 0.6.2, Service-Worker-Cache v16. 80/80 Tests, Browser 375 px: alle 14 Einträge der Start-Karte untereinander, kein seitliches Scrollen. Veröffentlicht auf Wunsch über `work/alltags-kompass-publish` (Details zum Release im Git-Log).
+

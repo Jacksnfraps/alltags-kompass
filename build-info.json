@@ -1,6 +1,6 @@
 {
-  "version": "0.6.1",
-  "buildId": "47a4125064c99e9f",
+  "version": "0.6.2",
+  "buildId": "d48bb9a0f78d0d58",
   "files": {
     ".nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "config.json": "7654806741c4ce04ced2f45eec334079565485187288957cf7771039ae98dab2",
@@ -28,16 +28,16 @@
     "src/domain/state.js": "72ef47bd5de4520f44a59e1dff36526266c810921133dae27ddd868c5b5137a2",
     "src/domain/when.js": "496cd6a050892787d7faef79003cca83c9d513a27352b1a0ac3a44dcf8840b10",
     "src/editing.js": "6c03372e74755c05a9d069cdec93ad3e70b3a26e05d85a2660e979305b897c24",
-    "src/main.js": "36498dbe067b80c33d01f07fc63c9469eaf16c0819601795833ff7cefdb6c9cd",
+    "src/main.js": "3f4bbb0c9a6980a0132bd64414cef3f29b0deb35eb0dd1df32cd9009990931df",
     "src/sort-view.js": "5373d6b5ba2f14504d1f965f643bd8827df802552a7a4f15b519256a0a019998",
-    "src/styles.css": "80df19eaecb3d48d9d3c5f66df603ce9172dd792b9c3b90874916a6293e530ce",
+    "src/styles.css": "9d9e1323ea126a070814f04e2f25ece3ea8aac319219e4d244c8b7425a9a7819",
     "src/ui.js": "7f77bdc94ffdca7ea14f0e776850bb491f8f92a15f0630d4b2dce09e966c6559",
     "src/views/events.js": "86a9b92ef13544db8bb96e3669c2adf32869ce4b7f70d9eacb2ea354d92d4132",
     "src/views/ideas.js": "4793d9d899f33613c007bd63b3cbf68e8bddc789498c9f73161ecd8579c8ae73",
     "src/views/inbox.js": "0b35887f35c89d013d1f71bcc69589f8b7b4f396d3ebaef3415bd6ee5c8c7812",
     "src/views/meds.js": "107ae927183895f0c5f160f731d2c4eace4e31e49f7328e69968e95236d9334e",
     "src/views/todos.js": "95e754d6c2146cb22f380a4161747f82634090cd5706b3e408ff79aefb2a46da",
-    "sw.js": "43f1779db460bf84f007e97e23ba09d2111321f511713f68ea717917be58258e",
+    "sw.js": "91f9e844644392fa1b019b7a996f83446eeb1253e9f28285e171e3ea818cf98b",
     "_headers": "0891b9a761d08bee860dea0d31e34e8aa4c9613f740c9f35f246f94b12226502"
   }
 }

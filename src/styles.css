@@ -194,8 +194,11 @@ details.inline-add>summary:hover{color:var(--accent-text)}
 .fchip{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;min-height:30px;padding:3px 9px;border-radius:15px;border:1px solid var(--border-2);background:transparent;color:var(--muted)}
 .fchip.on{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-text)}
 .fchip .n{font-size:.68rem;color:var(--faint)}
-.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:2px 10px;margin-top:6px}
-.shop-item{display:flex;align-items:center;gap:8px;padding:6px 0;min-height:36px;cursor:pointer;overflow-wrap:break-word}
+/* v0.6.2: list items one below the other (lists, shopping, start-page cards) – easier to scan and tick. */
+.shop-grid{display:flex;flex-direction:column;margin-top:6px}
+.shop-item{display:flex;align-items:center;gap:10px;padding:7px 0;min-height:40px;cursor:pointer;overflow-wrap:break-word;border-bottom:1px solid var(--border)}
+.shop-grid>.shop-item:last-child{border-bottom:0}
+.shop-item span{min-width:0}
 .shop-item.done span{color:var(--faint);text-decoration:line-through}
 .shop-done{margin-top:8px;border-top:1px solid var(--border);padding-top:4px}
 .call-grid{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:1px 10px;align-items:baseline}
