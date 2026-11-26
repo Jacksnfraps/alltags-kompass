@@ -1,9 +1,9 @@
 // Offline shell. Network-first for app files (updates arrive immediately when the server is reachable),
 // cache fallback when offline. API calls are never cached.
-const CACHE = 'kompass-shell-v13';
+const CACHE = 'kompass-shell-v14';
 const SHELL = ['./','./index.html','./src/styles.css','./src/app.js','./src/main.js','./src/ui.js',
   './src/views/inbox.js','./src/views/ideas.js','./src/views/todos.js','./src/views/events.js','./src/views/meds.js',
-  './src/domain/sort.js','./src/domain/when.js','./src/domain/ics.js','./src/domain/intent.js','./src/domain/shifts.js','./src/domain/id.js','./src/domain/state.js',
+  './src/domain/calendar.js','./src/domain/sort.js','./src/domain/when.js','./src/domain/ics.js','./src/domain/intent.js','./src/domain/shifts.js','./src/domain/id.js','./src/domain/state.js',
   './src/data/capture-flow.js','./src/data/store.js','./src/data/cloud.js','./src/data/sync.js','./src/data/ai-key.js','./src/data/gemini.js',
   './manifest.webmanifest','./icon.svg','./icon-180.png','./icon-512.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting())));

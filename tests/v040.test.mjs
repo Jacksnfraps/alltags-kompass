@@ -110,7 +110,7 @@ test('(d) Dienstplan: Fotos entfernen und Wochenplan auf „J. Twele“ filtern'
   const grid=['Name\tMo 30.11.\tDi 01.12.\tMi 02.12.\tDo 03.12.\tFr 04.12.','Müller, A.\tF\tF\tS\tfrei\tN','Twele, J.\tS\tfrei\tF\t06:00-14:00\tN','Schmidt, B.\tN\tN\tfrei\tF\tF'].join('\n');
   const r=parseShiftPlan(grid,now,{name:'J. Twele'});
   assert.equal(r.mode,'grid');assert.equal(r.matched,1);assert.equal(r.total,3);
-  assert.deepEqual(r.rows.map(x=>`${x.date} ${x.start}-${x.end} ${x.label}`),['2026-11-30 14:00-22:00 Spät','2026-12-02 06:00-14:00 Früh','2026-12-03 06:00-14:00 Dienst','2026-12-04 22:00-06:00 Nacht']);
+  assert.deepEqual(r.rows.map(x=>`${x.date} ${x.start}-${x.end} ${x.label}`),['2026-11-30 14:00-22:00 Spät','2026-12-01 - Frei','2026-12-02 06:00-14:00 Früh','2026-12-03 06:00-14:00 Dienst','2026-12-04 22:00-06:00 Nacht']);
   const lines=parseShiftPlan('30.11. 06:00-14:00 Früh J. Twele\n30.11. 14:00-22:00 Spät A. Müller\n02.12. Spät J. Twele',now,{name:'J. Twele'});
   assert.equal(lines.rows.length,2);assert.ok(lines.rows.every(x=>!/twele/i.test(x.label)),'Name nicht im Titel');
   assert.equal(parseShiftPlan('02.12. Spät\n03.12. Früh',now,{name:'J. Twele'}).rows.length,2,'ohne Namen im Text bleiben alle Zeilen');

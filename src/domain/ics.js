@@ -71,7 +71,7 @@ export function icsToTrash(events,{from=new Date(),stableId}){
     // for several dates fall back to UID + date.
     let key=e.uid?`ics:${e.uid}`:`ics:${e.start.date}:${e.summary||''}`;
     if(seen.has(key))key+=`:${e.start.date}`;seen.add(key);
-    rows.push({id:stableId(key),title:binOf(e.summary),due_at:`${e.start.date}T00:00`,all_day:true,recurrence,until,skip_days:e.exdates.filter(Boolean),category:'trash',person:'family',ics_uid:e.uid||null,source:'ics',summary:e.summary||''});
+    rows.push({id:stableId(key),title:binOf(e.summary),due_at:`${e.start.date}T00:00`,all_day:true,recurrence,until,skip_days:e.exdates.filter(Boolean),category:'trash',person:'trash',ics_uid:e.uid||null,source:'ics',summary:e.summary||''});
   }
   return {rows,unsupported};
 }

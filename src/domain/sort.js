@@ -1,3 +1,4 @@
+import {childId,rhythmException,exceptionPatch} from './calendar.js';
 import {operation,entryDefaults} from './state.js';
 import {parseWhen,stripWhen} from './when.js';
 import {groupListIntents,resolveName,findList,isShoppingName,norm as inorm,similar} from './intent.js';
@@ -53,6 +54,8 @@ export function personOf(t,people={}){
   const isKids=/\b(?:kinder|kind|sohn|tochter|kita|schule|elternabend|kinderarzt|hort|klassenfahrt|schulfest)\b/.test(t)||kids.some(k=>new RegExp(`\\b${k}\\b`).test(t));
   if(/\b(?:familie|wir alle)\b/.test(t))return 'family';
   if(isPartner)return 'vanessa';
+  const named=kids.filter(k=>t.split(/[^\p{L}]+/u).includes(k));
+  if(named.length===1)return childId(named[0]);
   if(isKids)return 'kids';
   return 'me';
 }
@@ -259,13 +262,20 @@ export function sortingOperations(capture,parts,state,source='local'){
     return lid;};
   parts.forEach((p,i)=>{
     if(!p.text.trim())return;
+    const exception=rhythmException(p.text,Object.values(state.entry),new Date(capture.created_at||Date.now()));
+    if(exception){
+      const target=exception.candidates.length===1?state.entry[exception.candidates[0]]:null;
+      if(target){const patch=exceptionPatch(target,exception);ops.push(operation('entry',target.id,patch,'patch'));state={...state,entry:{...state.entry,[target.id]:{...target,...patch}}};}
+      const id=stableId(`${capture.id}:part:${i}`);
+      const op=operation('entry',id,{...entryDefaults('event'),title:target?`Ausnahme: ${target.title}`:'Rhythmus-Ausnahme zuordnen',details:p.text,capture_id:capture.id,source_start:p.start,source_end:p.end,category:'exception',exception,status:target?'done':'open',needs_review:!target});op.id=id;ops.push(op);return;
+    }
     // "Füge eine Liste hinzu für die Tasche": creates/links the list, no to-do from the request sentence.
     if(p.category==='list'&&p.list&&!p.items?.length){linked.push(listId(p.list));return;}
     if(p.category==='shopping'&&p.action&&!p.items?.length)return;
     let project_id=null;
     if(p.project&&!p.uncertain){const key=normalize(p.project);project_id=known.get(key)||stableId('project:'+key);if(!known.has(key)){const op=operation('project',project_id,{title:p.project});op.id=project_id;ops.push(op);known.set(key,project_id);}}
     const id=stableId(`${capture.id}:part:${i}`);
-    const data={...entryDefaults(p.kind),capture_id:capture.id,title:p.title,details:p.text,source_start:p.start,source_end:p.end,project_id,minutes:p.minutes,energy:p.energy,position:p.position,facts:p.facts||{},missing_fields:p.missing_fields||[],category:p.category||'general',needs_review:p.uncertain,suggested_project:p.project,sort_source:source,person:p.person||'me',due_at:p.due_at||null,all_day:!!p.all_day,recurrence:p.recurrence||null};
+    const data={...entryDefaults(p.kind),capture_id:capture.id,title:p.title,details:p.text,source_start:p.start,source_end:p.end,project_id,minutes:p.minutes,energy:p.energy,position:p.position,facts:p.facts||{},missing_fields:p.missing_fields||[],category:p.category||'general',needs_review:p.uncertain,suggested_project:p.project,sort_source:source,person:p.category==='trash'?'trash':p.person||'me',due_at:p.due_at||null,all_day:!!p.all_day,recurrence:p.recurrence||null};
     if(p.items)data.items=p.items;if(p.contact)data.contact=p.contact;
     if(p.category==='list'&&p.list){const lid=listId(p.list);data.list_id=lid;data.project_id=null;linked.push(lid);}
     const op=operation('entry',id,data);op.id=id;ops.push(op);

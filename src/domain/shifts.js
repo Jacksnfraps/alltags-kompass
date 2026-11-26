@@ -36,7 +36,10 @@ const DATE_G=/(\d{1,2})\.(\d{1,2})\.(\d{2,4})?/g;
 const OFF=/^(?:frei|x|-|–|—|\/|u|urlaub|k|krank|ft|feiertag|ruhe|za|aus|0)$/i;
 const CODES={f:'früh',fr:'früh',frü:'früh',früh:'früh',fd:'früh',s:'spät',sp:'spät',spät:'spät',sd:'spät',n:'nacht',na:'nacht',nacht:'nacht',nd:'nacht'};
 function cellShift(cell){
-  const c=cell.trim();if(!c||OFF.test(c))return null;
+  const c=cell.trim();if(!c)return null;
+  if(/^(?:o|0|frei|u|urlaub)$/i.test(c))return {start:'',end:'',label:/^(?:u|urlaub)$/i.test(c)?'Urlaub':'Frei'};
+  if(OFF.test(c))return null;
+  if(/^[FSN][1-9]?$/i.test(c)&&/\d/.test(c))return {start:'',end:'',label:c.toUpperCase()};
   const t=c.match(/^([01]?\d|2[0-3])(?:[:.]([0-5]\d))?\s*[-–]\s*([01]?\d|2[0-3])(?:[:.]([0-5]\d))?$/);
   if(t)return {start:`${pad(Number(t[1]))}:${t[2]||'00'}`,end:`${pad(Number(t[3]))}:${t[4]||'00'}`,label:'Dienst'};
   const code=CODES[c.toLocaleLowerCase('de').replace(/dienst$/,'')];
@@ -96,4 +99,18 @@ export function validateShiftRows(value){
 }
 export function shiftToEntry(row){
   return {title:row.label,due_at:`${row.date}T${row.start||'00:00'}`,all_day:!row.start,end_time:row.end||null,category:'shift',minutes:60,energy:'low'};
+}
+
+// Codes never imply a time. Explicit labels and user mappings take precedence.
+export function shiftCode(entry,mapping={}){
+  const label=String(entry.title||entry.label||'').trim();
+  const custom=mapping[label];if(custom)return String(custom).slice(0,5);
+  const code=label.match(/\b([FSN][1-9]?|O|U)\b/i);
+  if(code)return code[1].toUpperCase();
+  if(/urlaub/i.test(label))return 'U';
+  if(/^(?:frei|0)$/i.test(label))return 'O';
+  if(/früh/i.test(label))return 'F';
+  if(/spät/i.test(label))return 'S';
+  if(/nacht/i.test(label))return 'N';
+  return 'D';
 }

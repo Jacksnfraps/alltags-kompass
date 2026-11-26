@@ -10,6 +10,7 @@ export const inboxArchiveOpen=ui=>!!ui.inboxOpen||!!(ui.search||'').trim();
 // Re-evaluates an entry that still waits in "Kurz klären" with the current (sharper) local rules.
 // Returns a ready patch only when the new result is unambiguous; nothing is applied silently.
 export function reviewSuggestion(entry,state,settings={}){
+  if(entry.category==='exception')return null;
   const text=entry.details||entry.title||'';if(!text.trim())return null;
   const people={partner:settings.partner,kids:String(settings.kids||'').split(',').map(x=>x.trim()).filter(Boolean)};
   const [p]=localSort(text,Object.values(state.project),{now:new Date(entry.created_at||Date.now()),people,lists:Object.values(state.list||{}).filter(l=>!l.archived)});

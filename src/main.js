@@ -136,14 +136,14 @@ const ctx={
     const original=text.trim()||rows.map(r=>`${r.date.split('-').reverse().join('.')} ${r.start}${r.end?'-'+r.end:''} ${r.label}`).join('\n');
     const {id,op}=captureOps(original);const ops=[op];
     for(const r of rows)ops.push(operation('entry',uuid(),{...entryDefaults('event'),...shiftToEntry(r),person,capture_id:id,details:original,sort_source:'manual'}));
-    await commit(ops);status(`${rows.length} Dienste eingetragen.`);
+    ui.eventPane='agenda';await commit(ops);status(`${rows.length} Dienste eingetragen – in der Agenda mit Kürzel sichtbar.`);
   }),
   readShiftPhoto:att=>run(async()=>{
     if(!ctx.aiAllowed()){ui.shiftDraft={rows:[],source:'text'};render();status(config.aiEnabled?'KI-Auslesen ist nur nach Zustimmung in den Einstellungen aktiv. Alternativ Dienste als Text/Zeile eintragen.':'Ohne Gemini-Key kein automatisches Auslesen. Dienste bitte als Text einfügen oder Zeile ergänzen – das Foto bleibt gespeichert.');return;}
     if(!navigator.onLine)throw new Error('Offline: Foto bleibt gespeichert, Auslesen später erneut versuchen.');
     status('Dienstplan wird ausgelesen …');
     const row=await store.blob(att.blob_id);if(!row)throw new Error('Foto nicht auf diesem Gerät.');
-    const name=settings.shiftName??'J. Twele';
+    const name=settings.shiftName??'';
     const image=await blobBase64(row.blob),mime=row.blob.type||'image/jpeg',year=new Date().getFullYear();
     let result;
     if(userAi())result=await userAi().readShiftPlan(image,mime,year,name);
@@ -301,7 +301,7 @@ function drawSettings(){
   const kids=h('input',{class:'inp',value:settings.kids,placeholder:'z. B. Mia, Ben','aria-label':'Namen der Kinder'});
   const ppl=h('section',{class:'set-block'},h('h3',{},'Personen für Termine'),
     h('form',{class:'account-form',onsubmit:e=>{e.preventDefault();settings.partner=partner.value.trim()||'Partnerin';settings.kids=kids.value;write('kompass.settings',settings);render();status('Personen gespeichert (nur auf diesem Gerät).');}},
-      h('label',{},'Partnerin',partner),h('label',{},'Kinder (Komma-getrennt, für automatische Zuordnung)',kids),h('button',{class:'btn sm'},'Speichern')));
+      h('label',{},'Partnerin',partner),h('label',{},'Kinder (Komma-getrennt, als einzelne Kalenderfilter)',kids),h('button',{class:'btn sm'},'Speichern')));
   const importInput=h('input',{type:'file',accept:'application/json,.json',class:'sr-only',onchange:()=>{const f=importInput.files[0];importInput.value='';if(f)run(()=>importBackup(f));}});
   const data=h('section',{class:'set-block'},h('h3',{},'Daten'),
     h('p',{class:'muted sm'},`Speicher: ${store?.scope==='guest'?'Gastmodus auf diesem Gerät':'Kontospeicher'} · ${Object.keys(state?.capture||{}).length} Originale · v${VERSION}`),
@@ -421,7 +421,8 @@ $('capture-form').addEventListener('submit',event=>{
       const review=linked.filter(e=>e.needs_review).length;
       // Name the list(s) so it is visible where the thought went ("→ Tasche Alfsee", "Liste „Tasche Aasee“ angelegt").
       const lists=(state.capture[result.capture.id]?.linked_lists||[]).map(id=>state.list?.[id]?.title).filter(Boolean);
-      const where=lists.length?` · ${linked.length?'→ ':'Liste '}${lists.map(t=>`„${t}“`).join(', ')}${linked.length?'':' bereit'}`:'';
+      const exceptions=linked.filter(e=>e.category==='exception'&&e.status==='done').length;
+      const where=exceptions?` · ${exceptions} Rhythmus-Ausnahme berücksichtigt`:lists.length?` · ${linked.length?'→ ':'Liste '}${lists.map(t=>`„${t}“`).join(', ')}${linked.length?'':' bereit'}`:'';
       status(result.sorted?`✓ Gesichert · ${linked.length?`${linked.length} ${linked.length===1?'Eintrag':'Einträge'} `:''}${result.source==='gemini'?'mit Gemini':'lokal'} einsortiert${where}${review?` · ${review} kurz klären`:''}.`:'Original vollständig gesichert. Sortierung noch offen – im Eingang „sortieren“ tippen.');
       await queueStatus();sync?.run();
     }finally{button.disabled=false;}

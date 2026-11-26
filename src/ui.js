@@ -1,3 +1,4 @@
+import {calendarPeople} from './domain/calendar.js';
 // Small DOM helpers and shared components. No framework.
 import {kindNames,cleanTitle,summarize} from './domain/sort.js';
 import {localDay} from './domain/state.js';
@@ -64,10 +65,8 @@ export const RECURRENCE={'':'einmalig',daily:'täglich',weekly:'wöchentlich',bi
 export const VIEW_OF={idea:'ideas',todo:'todos',event:'events',medication:'meds'};
 export const KIND_ICON={idea:'◇',todo:'✓',event:'▦',medication:'⊕'};
 
-export function people(settings){
-  return {me:{label:'Ich',short:'I'},vanessa:{label:settings.partner||'Partnerin',short:(settings.partner||'P')[0].toUpperCase()},kids:{label:'Kinder',short:'K'},family:{label:'Familie',short:'F'}};
-}
-export function personBadge(person,settings){const p=people(settings)[person]||people(settings).me;return h('span',{class:`pbadge p-${person||'me'}`,title:p.label,'aria-label':p.label},p.short);}
+export const people=calendarPeople;
+export function personBadge(person,settings){const p=people(settings)[person]||{label:person?.startsWith('child:')?decodeURIComponent(person.slice(6)):'Ich',short:'•'};return h('span',{class:`pbadge p-${person?.startsWith('child:')?'kids':person||'me'}`,title:p.label,'aria-label':p.label},p.short);}
 
 export const isSnoozed=(item,now=Date.now())=>!!item.revisit_at&&new Date(item.revisit_at).getTime()>now;
 export const isBack=(item,now=Date.now())=>!!item.revisit_at&&new Date(item.revisit_at).getTime()<=now&&item.status!=='done';

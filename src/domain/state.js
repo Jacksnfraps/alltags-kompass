@@ -56,7 +56,7 @@ export function occurrences(entry, from, to) {
   const out = []; let date = nextOccurrence(entry, from); let guard = 0;
   while (date && date < to && guard++ < 400) {
     if (until && date > until) break;
-    if (!skip.has(localDay(date))) out.push(new Date(date));
+    if (!skip.has(localDay(date)) && !(entry.skip_ranges||[]).some(r=>localDay(date)>=r.start&&localDay(date)<=r.end)) out.push(new Date(date));
     date = nextOccurrence(entry, new Date(date.getTime() + 60000));
   }
   return out;

@@ -44,7 +44,7 @@ test('Automatische Zuordnung: Einkauf, Anruf (Wer/Wann/Weshalb), Personen, Müll
   assert.equal(p[5].category,'trash');assert.equal(p[5].recurrence,'biweekly');assert.equal(p[5].all_day,true);
   assert.equal(p[6].category,'rhythm');assert.equal(p[6].recurrence,'weekly');
   assert.equal(p[7].project,'Steuer');assert.equal(p[7].energy,'high');
-  assert.equal(localSort('Termin mit Mia',[],{now,people:{kids:['Mia']}})[0].person,'kids');
+  assert.equal(localSort('Termin mit Mia',[],{now,people:{kids:['Mia']}})[0].person,'child:mia');
 });
 
 test('Sortier-Operationen speichern Termin-/Personen-/Einkaufsfelder',()=>{
