@@ -39,7 +39,8 @@ export function createGemini(config,fetcher=fetch,clock=()=>Date.now(),memory=nu
     try{
       const response=await fetcher(`${API}${config.model}`,{headers:{'x-goog-api-key':config.geminiKey},signal:AbortSignal.timeout(10000)});
       if(response.ok)return {ok:true};
-      if([400,401,403].includes(response.status))return {ok:false,invalid:true,reason:'Google lehnt den Key ab – bitte in AI Studio prüfen.'};
+      if([400,401].includes(response.status))return {ok:false,invalid:true,reason:'Google lehnt den Key ab – bitte in AI Studio prüfen.'};
+      if(response.status===403)return {ok:false,reason:'Google HTTP 403: Modellzugriff oder Key-Einschränkungen prüfen; das Konto-Speichern ist unabhängig davon.'};
       return {ok:false,reason:`Gemini antwortet mit ${response.status}`};
     }catch{return {ok:false,reason:'Gemini gerade nicht erreichbar'};}
   }

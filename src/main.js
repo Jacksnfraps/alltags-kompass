@@ -321,20 +321,31 @@ function drawAiBlock(){
     ?`Aktiv · Key ${maskKey(keys.key)} ${keys.where==='account'?'im Konto gespeichert – nach dem Anmelden auf allen Geräten (z. B. iPhone) automatisch da.':'nur auf diesem Gerät gespeichert (Gastmodus).'}`
     :config.aiEnabled?'Kein eigener Key. Der lokale Server hat einen Key – Nutzung nach Zustimmung unten.':'Aus · es wird lokal sortiert. Mit eigenem Gemini-Key wird die KI-Sortierung automatisch aktiv.';
   const input=h('input',{class:'inp ai-key',type:'password',name:'gemini-key',autocomplete:'off',autocapitalize:'off',spellcheck:'false',placeholder:keys.key?'Neuen Key eingeben, um ihn zu ersetzen':'AIza…','aria-label':'Gemini-API-Key'});
+  const saveButton=h('button',{type:'submit',class:'btn sm'},'Key speichern');
+  input.placeholder=keys.key?'Neuen vollständigen Key eingeben':'Vollständigen API-Key einfügen';
+  input.addEventListener('input',()=>{feedback.textContent='';});
   const form=h('form',{class:'account-form',onsubmit:event=>{event.preventDefault();
-    run(async()=>{
+    if(saveButton.disabled)return;
+    // Capture now, not later in the unrelated operation queue. Show progress immediately.
+    const raw=input.value;const accountCloud=cloud;
+    saveButton.disabled=true;input.disabled=true;
+    const notify=text=>{feedback.textContent=text;status(text);};
+    void (async()=>{try{
       feedback.textContent='Key wird geprüft …';
       // Validate the candidate BEFORE replacing the account key. A typo must not erase a working key.
-      let candidate;try{candidate=cleanKey(input.value);}catch(error){feedback.textContent=error.message;return;}
+      let candidate;try{candidate=cleanKey(raw);}catch(error){notify(error.message);return;}
       const check=navigator.onLine?await createGemini({geminiKey:candidate,freeOnly:true,model:'gemini-2.5-flash-lite'}).verify():{ok:false,reason:'offline'};
-      if(check.invalid){feedback.textContent=check.reason+' Der bisherige Key bleibt unverändert.';return;}
-      try{await keys.save(candidate);}catch(error){feedback.textContent=error.message;return;}
+      if(check.invalid){notify(check.reason+' Der bisherige Key bleibt unverändert.');return;}
+      if(cloud!==accountCloud||keys.signedIn!==signedIn){notify('Konto wurde gewechselt. Bitte im gewünschten Konto erneut speichern.');return;}
+      notify(signedIn?'Key wird im Konto gespeichert …':'Key wird auf diesem Gerät gespeichert …');
+      try{await keys.save(candidate);}catch(error){notify(error.message);return;}
       aiKeys=keys;
       redraw(`Gespeichert${keys.where==='account'?' im Konto':' auf diesem Gerät'} · KI-Sortierung ist aktiv${check.ok?'':` (Prüfung nicht möglich: ${check.reason})`}.`);
       status('KI-Sortierung aktiv (Gemini Free Tier).');
-    });}},
+    }catch{notify('Key konnte nicht gespeichert werden. Bitte Verbindung prüfen und erneut versuchen.');}
+    finally{saveButton.disabled=false;input.disabled=false;}})();}},
     h('label',{},'Eigener Gemini-API-Key',input),
-    h('div',{class:'form-line'},h('button',{class:'btn sm'},'Key speichern'),
+    h('div',{class:'form-line'},saveButton,
       keys.key?h('button',{type:'button',class:'btn sm ghost',onclick:()=>run(async()=>{
         if(!confirm(signedIn?'Key aus dem Konto entfernen? Danach wird auf allen Geräten lokal sortiert.':'Key von diesem Gerät entfernen?'))return;
         try{await keys.remove();}catch(error){feedback.textContent=error.message;return;}

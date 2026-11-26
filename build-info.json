@@ -1,6 +1,6 @@
 {
   "version": "0.6.0",
-  "buildId": "038c090c1a5308a6",
+  "buildId": "d00eb393d4a3962b",
   "files": {
     ".nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "config.json": "7654806741c4ce04ced2f45eec334079565485187288957cf7771039ae98dab2",
@@ -10,10 +10,10 @@
     "index.html": "b1e6b7fd05785c3e792df35acfce0942419050f8a88ee9bc1949e49f55df9617",
     "manifest.webmanifest": "f2ba905124ae68bcbe1724d31c3fe565166a0731202155ceb22c93a541c1bd1b",
     "src/app.js": "43d75acf5cd50873ce4004ecdeea39758147d481c10d632ab88401b3727eb896",
-    "src/data/ai-key.js": "f9b27bd57d4bcc470072e80f03ad206e3e420ddb40ded51398f752ca72378994",
+    "src/data/ai-key.js": "e94dce066cb52943724985f76f5110144f2c22ea14aadb1b63dbb696189042bc",
     "src/data/capture-flow.js": "a9cc6a5c02dca76e6df82c9e7e9cb4b184f07df4be3817e3b512a9fbd9986bea",
     "src/data/cloud.js": "2c356aa8be83bf72fd8c83a23c0d15576c92e088658b03c4733fd02171786604",
-    "src/data/gemini.js": "6a01482c75e934b2ed03d4ba82a18c9a5242bbeaf71df0ea89f8ff4a950c46e4",
+    "src/data/gemini.js": "bbe0b348a433adfaed8ee7a571dfefa9c8f6a96bb2e96bbff6c0c9bb8b998919",
     "src/data/local.js": "d95451289cebf8da22a1ef9ddcb3157f0215d2476ce1cafdd0289f0f7da508ef",
     "src/data/store.js": "f5d083549462009a1fc327bc6bbfd5bc9c05e11476e87187c7e02320a2122d87",
     "src/data/sync.js": "859ec1015d97a8edabdc89a02589473bc5d7c691b4105f6b4093becb695c0176",
@@ -26,7 +26,7 @@
     "src/domain/sort.js": "78fe808f912148ab5bb511419f9470b370d77390c3b03b69ae9fbaed780498d9",
     "src/domain/state.js": "fd6622811f4ad5cd2c9bfebf68b72d4d17d13175382d981941b9ab112584b4bc",
     "src/domain/when.js": "496cd6a050892787d7faef79003cca83c9d513a27352b1a0ac3a44dcf8840b10",
-    "src/main.js": "40c1f31b14d4ff8d9612c4be40ca81f12822958c140a2de0479f969ae4757660",
+    "src/main.js": "33d3287eb860dd0be10a51714321b45cb6bb40fd909980659112ba3bda9a5a94",
     "src/sort-view.js": "5373d6b5ba2f14504d1f965f643bd8827df802552a7a4f15b519256a0a019998",
     "src/styles.css": "4fcea9ee11bf0e288a714cf770e9c93cfd75834f39560ccbcb483b9c387d34c7",
     "src/ui.js": "5ba81319f5e67512a7cbdbc3709116017d61d447a178d3ff2490f70c33d9aafc",
@@ -35,7 +35,7 @@
     "src/views/inbox.js": "5ae31c6230f4146a89491fdc84b9a3211563e0ed410ddca6c960937ad9f1796d",
     "src/views/meds.js": "107ae927183895f0c5f160f731d2c4eace4e31e49f7328e69968e95236d9334e",
     "src/views/todos.js": "c4126c6db32714e108a4587f14062ed1dc0e236ba466392808a2439f1827ea70",
-    "sw.js": "3a9c73ea0300a596ac3da11d7cd5bfe6cc138304a0531fadab91ad6f89650a96",
+    "sw.js": "bf7e44dc37410507175ec4e38dc1118413e0a0a87bd185f2ece12e261b9c6445",
     "_headers": "0891b9a761d08bee860dea0d31e34e8aa4c9613f740c9f35f246f94b12226502"
   }
 }
