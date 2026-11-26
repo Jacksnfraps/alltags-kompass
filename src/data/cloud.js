@@ -42,6 +42,16 @@ export class Cloud {
       const page=await response.json(); all.push(...page); if(page.length<500) return all;
     }
   }
+  // Account settings (one overwritable row per user, RLS: own row only; migration 004).
+  async getUserSettings() {
+    const token=await this.token();
+    const rows=await (await this.request(`/rest/v1/kompass_user_settings?select=gemini_key,updated_at&owner_id=eq.${this.session.user.id}`,{},token)).json();
+    return rows[0]||null;
+  }
+  async saveUserSettings(data) {
+    const token=await this.token();
+    await this.request('/rest/v1/kompass_user_settings?on_conflict=owner_id',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({owner_id:this.session.user.id,...data,updated_at:new Date().toISOString()})},token);
+  }
   async uploadBlob(row) {
     const token=await this.token();
     const response=await fetch(`${this.url}/storage/v1/object/kompass-photos/${this.session.user.id}/${row.id}`,{method:'POST',headers:{apikey:this.key,Authorization:`Bearer ${token}`,'Content-Type':row.blob.type,'x-upsert':'false'},body:row.blob,signal:AbortSignal.timeout(30000)});

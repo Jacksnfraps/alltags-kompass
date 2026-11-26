@@ -1,0 +1,41 @@
+{
+  "version": "0.6.0",
+  "buildId": "038c090c1a5308a6",
+  "vsPreviousDist": {
+    "added": [
+      "build-info.json"
+    ],
+    "changed": [
+      "index.html",
+      "src/app.js",
+      "src/data/ai-key.js",
+      "src/domain/state.js",
+      "src/domain/when.js",
+      "src/main.js",
+      "src/views/ideas.js",
+      "src/views/todos.js",
+      "sw.js"
+    ],
+    "removed": []
+  },
+  "vsPublishedRepository": {
+    "added": [
+      ".nojekyll",
+      "src/data/ai-key.js",
+      "src/data/gemini.js",
+      "build-info.json"
+    ],
+    "changed": [
+      "index.html",
+      "src/app.js",
+      "src/data/cloud.js",
+      "src/domain/state.js",
+      "src/domain/when.js",
+      "src/main.js",
+      "src/views/ideas.js",
+      "src/views/todos.js",
+      "sw.js"
+    ]
+  },
+  "note": "Unterschiede enthalten LF/CRLF-Normalisierung; Git-Diff zeigt semantische Änderungen."
+}

@@ -81,3 +81,28 @@ Empfehlung: **dasselbe Konto, aber ein eigenes, neues Projekt** (z. B. „alltag
   - Hinweis: Im Free Tier kann Google gesendete Inhalte zur Produktverbesserung nutzen.
 - **Müll-Kalender (.ics):** Am lokalen Server holt `/api/ics` den Kalender ab. In der gehosteten Version versucht die App den direkten Abruf; blockiert der Entsorger das (CORS), die `.ics`-Datei herunterladen und über „.ics-Datei importieren“ einlesen.
 - **Updates:** Nach Änderungen erneut `npm run build:static` und den neuen `dist`-Ordner hochladen.
+
+## Veröffentlichung v0.6.0 – geprüft am 26.11.2026
+
+Die öffentliche Seite verwendet **Branch main, Ordner / (root)**. Daher gehört der **gesamte Inhalt von dist**, einschließlich src/data und .nojekyll, in die Repository-Wurzel. Nur einzelne Dateien hochzuladen ergibt einen Mischstand. Ein Ordner dist in der Repository-Wurzel allein wird bei dieser Pages-Einstellung nicht veröffentlicht.
+
+PowerShell ohne Änderung der ExecutionPolicy:
+
+```powershell
+npm.cmd test
+npm.cmd run build:static
+```
+
+Der Build prüft seine Dateien auf echte Gemini-Schlüssel, die Vollständigkeit der Offline-Shell und erzeugt build-info.json mit Version, Build-ID und SHA-256-Prüfsummen. Auf GitHub Pages muss build-info.json dieselbe Build-ID liefern wie lokal. _headers ist für andere Hoster; GitHub Pages wertet diese Datei nicht als Cache-Regel aus.
+
+### Supabase und Geräte
+
+Im bestehenden Kompass-Projekt den vollständigen Inhalt von supabase/migrations/004_user_settings.sql einmal im SQL-Editor ausführen. Die aktualisierte Migration kann bei Unklarheit nochmals laufen: sie erhält Daten, erneuert nur die vier eigenen RLS-Policies und läuft in einer Transaktion. **Keinen Gemini-Key in SQL eintragen.** Keine neue Supabase-Instanz und keine Wiederholung von 001–003 erforderlich, wenn diese bereits erfolgreich liefen.
+
+Danach auf der veröffentlichten Seite am PC als das gewünschte Konto anmelden, ⚙ → KI-Sortierung → eigenen Key speichern. Erst die Bestätigung „im Konto gespeichert“ belegt den Cloud-Speichervorgang. Ein Key ausschließlich in der lokalen .env wird absichtlich NICHT nach Supabase oder ins Hosting kopiert. Auf dem iPhone dieselbe HTTPS-Seite mit demselben Supabase-Konto öffnen und neu laden: der Kontowert wird beim Start geladen, eine zweite Eingabe entfällt bei erreichbarer Tabelle und erfolgreichem Login. Andere Nutzerkonten sehen ihn nicht. Bei Offline-Start wird nur eine bereits vorhandene kontogetrennte Gerätekopie genutzt; Abmelden entfernt diese Kopie, nicht den Cloud-Wert. Es gibt keine automatische Warteschlange für das Speichern eines API-Keys: offline bitte später erneut speichern.
+
+### Echten KI-Aufruf verifizieren
+
+Zuerst in Google AI Studio sicherstellen, dass das Projekt OHNE Billing läuft. Lokaler Server: GEMINI_FREE_TIER_CONFIRMED=true erst nach dieser Prüfung setzen und START-KOMPASS.cmd neu starten; für den Server-Key die Sitzungszustimmung in den Einstellungen aktivieren. Gehostet: eigener Kontokey wird unabhängig von .env benutzt. Das Kennzeichen „KI an“ bedeutet nur konfiguriert, nicht bereits erfolgreich aufgerufen.
+
+Einen unkritischen Test wie „Milch kaufen“ sichern und auf die Meldung „mit Gemini“ achten; ein lokales Ergebnis ist kein erfolgreicher KI-Nachweis. Im Browser-Netzwerkprotokoll muss generateContent HTTP 200 liefern (Header/Key nicht teilen). Danach einen nicht privaten Test-Dienstplan fotografieren, auslesen und die Vorschau vor Übernahme prüfen. 429/Timeout/ungültige Antwort: lokaler Fallback; 15 Minuten Pause, 100 Aufrufe pro Tag/Gerät. Diese Grenzen sind keine globale Kontosperre über alle Geräte. Der API-Key ist im eigenen Browser und in der RLS-geschützten Supabase-Zeile lesbar, nicht zusätzlich clientseitig verschlüsselt.

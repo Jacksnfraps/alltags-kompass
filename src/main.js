@@ -2,6 +2,8 @@ import {LocalStore} from './data/store.js';
 import {Cloud} from './data/cloud.js';
 import {Synchronizer} from './data/sync.js';
 import {saveAndSort} from './data/capture-flow.js';
+import {AiKeyStore,maskKey,cleanKey} from './data/ai-key.js';
+import {createGemini} from './data/gemini.js';
 import {operation,entryDefaults,localDay,stockStatus} from './domain/state.js';
 import {localSort,sortingOperations,validateSuggestions,stableId} from './domain/sort.js';
 import {validateShiftRows,shiftToEntry,filterRowsByName} from './domain/shifts.js';
@@ -14,14 +16,24 @@ import {renderTodos} from './views/todos.js';
 import {renderEvents} from './views/events.js';
 import {renderMeds} from './views/meds.js';
 
-const VERSION='0.5.0';
+const VERSION='0.6.0';
 const $=id=>document.getElementById(id);
 const status=text=>{$('save-status').textContent=text;};
 const VIEWS={inbox:['Überblick',renderInbox],ideas:['Ideen & Projekte',renderIdeas],todos:['To-dos & Listen',renderTodos],events:['Termine & Rhythmen',renderEvents],meds:['Tabletten-Zähler',renderMeds]};
 const UI_KEYS=['view','ideasMode','todoFilter','todoPane','eventPane','agendaDays','personFilter','shiftPerson','listId'];
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));}catch{/* per-device convenience only */}};
-let config={},cloud,store,sync,state,ready=false,renderVersion=0,aiConsent=false;
+let config={},cloud,store,sync,state,ready=false,renderVersion=0,aiConsent=false,aiKeys=null,aiClient=null;
+// Own key (account settings / this device): Gemini is called directly from the browser, also on
+// static hosting. Same contract, limits and validation as the server path. Budget per device.
+const AI_MEMORY={load:()=>read('kompass.ai.budget',{}),save:value=>write('kompass.ai.budget',value)};
+function userAi(){
+  const key=aiKeys?.key;if(!key)return null;
+  if(aiClient?.key!==key)aiClient={key,api:createGemini({geminiKey:key,freeOnly:true,model:'gemini-2.5-flash-lite',dailyLimit:100},(...args)=>fetch(...args),()=>Date.now(),AI_MEMORY)};
+  return aiClient.api;
+}
+function aiBadge(){$('ai-state').textContent=ctx.aiAllowed()?'KI an':'';}
+async function loadAiKey(){aiKeys=new AiKeyStore(cloud);await aiKeys.load();aiBadge();}
 const ui={view:'inbox',...read('kompass.ui',{})};if(!VIEWS[ui.view])ui.view='inbox';
 const settings={partner:'Vanessa',kids:'',...read('kompass.settings',{})};
 const peopleOptions=()=>({partner:settings.partner,kids:settings.kids.split(',').map(s=>s.trim()).filter(Boolean)});
@@ -50,7 +62,8 @@ const blobBase64=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r
 
 const ctx={
   get state(){return state;},ui,settings,get config(){return config;},
-  aiAllowed:()=>!!(config.aiEnabled&&aiConsent),
+  // Own key present -> AI sorting is on automatically. Otherwise: server key + consent per session.
+  aiAllowed:()=>!!(aiKeys?.key||(config.aiEnabled&&aiConsent)),
   // Optional sub-pane: start-page tiles jump straight to "Einkauf", "Listen", "Müll" … (one tap instead of two).
   navigate(view,pane){ui.view=view;if(pane&&view==='todos')ui.todoPane=pane;if(pane&&view==='events')ui.eventPane=pane;saveUi();render();window.scrollTo({top:0});},
   saveSettings(patch){Object.assign(settings,patch);write('kompass.settings',settings);},
@@ -131,8 +144,11 @@ const ctx={
     status('Dienstplan wird ausgelesen …');
     const row=await store.blob(att.blob_id);if(!row)throw new Error('Foto nicht auf diesem Gerät.');
     const name=settings.shiftName??'J. Twele';
-    const response=await fetch('./api/shiftplan',{method:'POST',headers:{'Content-Type':'application/json','X-Kompass-Token':config.sortToken},body:JSON.stringify({image:await blobBase64(row.blob),mime:row.blob.type||'image/jpeg',year:new Date().getFullYear(),name}),signal:AbortSignal.timeout(30000)});
-    const result=response.ok?await response.json():{source:'local',rows:[]};
+    const image=await blobBase64(row.blob),mime=row.blob.type||'image/jpeg',year=new Date().getFullYear();
+    let result;
+    if(userAi())result=await userAi().readShiftPlan(image,mime,year,name);
+    else{const response=await fetch('./api/shiftplan',{method:'POST',headers:{'Content-Type':'application/json','X-Kompass-Token':config.sortToken},body:JSON.stringify({image,mime,year,name}),signal:AbortSignal.timeout(30000)});
+      result=response.ok?await response.json():{source:'local',rows:[]};}
     let rows=[];try{rows=filterRowsByName(validateShiftRows(result.rows||[]),name);}catch{rows=[];}
     ui.shiftDraft={rows,source:result.source==='gemini'?'gemini':'text',info:name?`Foto auf „${name}“ gefiltert – bitte jede Zeile prüfen.`:''};render();
     status(rows.length?'Bitte erkannte Dienste prüfen und bestätigen.':'Nicht automatisch lesbar. Bitte als Text oder Zeile eintragen.');
@@ -184,10 +200,18 @@ async function sortCapture(capture,target=store){
   let parts=localSort(capture.original_text,Object.values(snapshot.project),{people:peopleOptions(),lists}),source='local';
   if(ctx.aiAllowed()&&navigator.onLine){
     try{
+      const context={lists:lists.map(l=>l.title),projects:projects.map(p=>p.title)};
+      const own=userAi();
+      if(own){
+        // Direct call with the own key: same segments (incl. people) and full list objects for validation.
+        const result=await own.sort(capture.original_text,context,{parts,lists});
+        if(result.source==='gemini'){parts=result.parts;source='gemini';}
+      }else{
       const response=await fetch('./api/parse',{method:'POST',headers:{'Content-Type':'application/json','X-Kompass-Token':config.sortToken},body:JSON.stringify({text:capture.original_text,lists:lists.map(l=>l.title),projects:projects.map(p=>p.title)}),signal:AbortSignal.timeout(15000)});
       if(response.ok){const result=await response.json();if(result.source==='gemini'){
         // Re-validated here against the local segments: the server answer is never trusted blindly.
         parts=validateSuggestions(result.parts.map((p,index)=>({...p,index,action:p.action||'none',list_name:p.list_name??p.list??''})),parts,{lists,text:capture.original_text});source='gemini';}}
+      }
     }catch{/* Original is already committed; local metadata remains usable. */}
   }
   await target.commit(sortingOperations(capture,parts,snapshot,source));
@@ -254,7 +278,7 @@ function drawSettings(){
           await commit(rows,blobs);status(`Gastkopie übernommen (${rows.length} Änderungen).`);
         })},'Gastdaten übernehmen'),
         h('button',{type:'button',class:'btn sm ghost',onclick:()=>run(async()=>{
-          await sync?.stop();await cloud.refreshing;let logoutError;
+          await sync?.stop();await cloud.refreshing;let logoutError;aiKeys?.forgetDevice();
           try{await cloud.logout();}catch(error){logoutError=error;}
           cloud=new Cloud(config);await switchStore();drawSettings();
           status(logoutError?'Lokal abgemeldet. Server-Abmeldung war offline nicht erreichbar.':'Abgemeldet. Nicht synchronisierte Kontodaten bleiben auf diesem Gerät.');
@@ -272,9 +296,7 @@ function drawSettings(){
       h('div',{class:'form-line'},h('button',{class:'btn sm',value:'login'},'Anmelden'),h('button',{class:'btn sm ghost',value:'signup'},'Registrieren')),feedback);
     acc.append(form);
   }
-  const ai=h('section',{class:'set-block'},h('h3',{},'KI-Sortierung (optional)'),
-    h('label',{class:'check-line'},h('input',{type:'checkbox',checked:aiConsent,disabled:!config.aiEnabled,onchange:e=>{aiConsent=e.target.checked;$('ai-state').textContent=aiConsent?'KI an':'';}}),
-      config.aiEnabled?' Für diese Sitzung Texte/Dienstplan-Fotos an Gemini senden (Free Tier; Google kann Inhalte zur Produktverbesserung nutzen).':' Kein Gemini-Key eingerichtet – es wird automatisch lokal sortiert.'));
+  const ai=drawAiBlock();
   const partner=h('input',{class:'inp',value:settings.partner,'aria-label':'Name Partnerin'});
   const kids=h('input',{class:'inp',value:settings.kids,placeholder:'z. B. Mia, Ben','aria-label':'Namen der Kinder'});
   const ppl=h('section',{class:'set-block'},h('h3',{},'Personen für Termine'),
@@ -286,6 +308,52 @@ function drawSettings(){
     h('div',{class:'form-line'},h('button',{type:'button',class:'btn sm',onclick:()=>run(exportBackup)},'Sicherung exportieren'),h('label',{class:'btn sm ghost file'},'Sicherung importieren',importInput)),
     h('p',{class:'muted sm'},'Import ergänzt nur fehlende Einträge; vorhandene Daten werden nie überschrieben.'));
   body.append(acc,ai,ppl,data);
+}
+// "KI-Sortierung (optional)": own Gemini key. Signed in -> account settings (Supabase, all devices);
+// guest -> only this browser. With a key AI sorting is on automatically, without it sorting stays local.
+function drawAiBlock(){
+  const keys=aiKeys||new AiKeyStore(cloud);
+  const signedIn=!!cloud?.session;
+  const feedback=h('p',{class:'muted sm',role:'status'});
+  const redraw=text=>{drawSettings();aiBadge();const f=$('settings-body').querySelector('.ai-feedback');if(f&&text)f.textContent=text;};
+  feedback.classList.add('ai-feedback');
+  const state=keys.key
+    ?`Aktiv · Key ${maskKey(keys.key)} ${keys.where==='account'?'im Konto gespeichert – nach dem Anmelden auf allen Geräten (z. B. iPhone) automatisch da.':'nur auf diesem Gerät gespeichert (Gastmodus).'}`
+    :config.aiEnabled?'Kein eigener Key. Der lokale Server hat einen Key – Nutzung nach Zustimmung unten.':'Aus · es wird lokal sortiert. Mit eigenem Gemini-Key wird die KI-Sortierung automatisch aktiv.';
+  const input=h('input',{class:'inp ai-key',type:'password',name:'gemini-key',autocomplete:'off',autocapitalize:'off',spellcheck:'false',placeholder:keys.key?'Neuen Key eingeben, um ihn zu ersetzen':'AIza…','aria-label':'Gemini-API-Key'});
+  const form=h('form',{class:'account-form',onsubmit:event=>{event.preventDefault();
+    run(async()=>{
+      feedback.textContent='Key wird geprüft …';
+      // Validate the candidate BEFORE replacing the account key. A typo must not erase a working key.
+      let candidate;try{candidate=cleanKey(input.value);}catch(error){feedback.textContent=error.message;return;}
+      const check=navigator.onLine?await createGemini({geminiKey:candidate,freeOnly:true,model:'gemini-2.5-flash-lite'}).verify():{ok:false,reason:'offline'};
+      if(check.invalid){feedback.textContent=check.reason+' Der bisherige Key bleibt unverändert.';return;}
+      try{await keys.save(candidate);}catch(error){feedback.textContent=error.message;return;}
+      aiKeys=keys;
+      redraw(`Gespeichert${keys.where==='account'?' im Konto':' auf diesem Gerät'} · KI-Sortierung ist aktiv${check.ok?'':` (Prüfung nicht möglich: ${check.reason})`}.`);
+      status('KI-Sortierung aktiv (Gemini Free Tier).');
+    });}},
+    h('label',{},'Eigener Gemini-API-Key',input),
+    h('div',{class:'form-line'},h('button',{class:'btn sm'},'Key speichern'),
+      keys.key?h('button',{type:'button',class:'btn sm ghost',onclick:()=>run(async()=>{
+        if(!confirm(signedIn?'Key aus dem Konto entfernen? Danach wird auf allen Geräten lokal sortiert.':'Key von diesem Gerät entfernen?'))return;
+        try{await keys.remove();}catch(error){feedback.textContent=error.message;return;}
+        redraw('Key entfernt · es wird wieder lokal sortiert.');status('KI-Sortierung aus – lokale Sortierung aktiv.');
+      })},'Key entfernen'):null),
+    feedback);
+  const block=h('section',{class:'set-block'},h('h3',{},'KI-Sortierung (optional)'),h('p',{class:'sm'},state),form);
+  if(keys.error)block.append(h('p',{class:'check-note'},keys.error));
+  if(signedIn&&!keys.key&&keys.guestKey)block.append(h('div',{class:'form-line'},
+    h('span',{class:'muted sm'},'Auf diesem Gerät liegt noch ein Key aus dem Gastmodus.'),
+    h('button',{type:'button',class:'btn sm ghost',onclick:()=>run(async()=>{try{await keys.adoptGuestKey();aiKeys=keys;redraw('Key ins Konto übernommen · KI-Sortierung aktiv.');}catch(error){feedback.textContent=error.message;}})},'Ins Konto übernehmen')));
+  block.append(h('p',{class:'muted sm'},
+    'Key kostenlos in Google AI Studio erstellen (aistudio.google.com → „Get API key“), in einem Projekt ',h('b',{},'ohne'),' Abrechnung/Kreditkarte – dann bleibt es bei 0 €. ',
+    'Mit Key werden Texte und auf Wunsch Dienstplan-Fotos direkt an Gemini (Free Tier) gesendet; Google kann diese Inhalte zur Produktverbesserung nutzen. ',
+    'Höchstens 100 Aufrufe pro Tag und Gerät, nach Fehlern 15 Minuten Pause – dann wird automatisch lokal sortiert.',
+    signedIn?'':cloud?.configured?' Tipp: Erst anmelden, dann speichern – so ist der Key auch auf dem iPhone da.':''));
+  if(config.aiEnabled&&!keys.key)block.append(h('label',{class:'check-line'},h('input',{type:'checkbox',checked:aiConsent,onchange:e=>{aiConsent=e.target.checked;aiBadge();}}),
+    ' Für diese Sitzung den Server-Key nutzen und Texte/Dienstplan-Fotos an Gemini senden.'));
+  return block;
 }
 async function exportBackup(){
   const operations=await store.operations();const files=[];
@@ -317,6 +385,8 @@ async function switchStore(){
   $('dump').value=localStorage.getItem(`kompass.draft:${store.scope}`)||'';grow();
   await refresh();ready=true;await queueStatus();
   $('account-hint').textContent=cloud.session?cloud.session.user.email:'Gastmodus';
+  // Key of this account (Supabase) or of guest mode (this device). Never blocks the start.
+  await loadAiKey().catch(()=>{});
   if(cloud.session){const target=store;sync=new Synchronizer(target,cloud,async()=>{if(store===target)await refresh();},text=>{if(store===target)connection(text,'sync');});sync.start();}
 }
 
@@ -350,8 +420,11 @@ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',(
 $('open-settings').addEventListener('click',()=>{drawSettings();$('settings').showModal();});
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close();}));
 window.addEventListener('offline',()=>connection('Offline · lokal gesichert','local'));
-window.addEventListener('online',()=>{if(sync)sync.run();else queueStatus().catch(error=>status(error.message));});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){refresh().catch(error=>status(error.message));autoTrashSync();}});
+window.addEventListener('online',()=>{if(sync)sync.run();else queueStatus().catch(error=>status(error.message));if(cloud?.session)aiKeys?.load().then(aiBadge).catch(()=>{});});
+let keyChecked=Date.now();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ready){refresh().catch(error=>status(error.message));autoTrashSync();
+  // A key saved on another device arrives here when the app comes back to the front (at most every 10 min).
+  if(cloud?.session&&Date.now()-keyChecked>10*60e3){keyChecked=Date.now();aiKeys?.load().then(aiBadge).catch(()=>{});}}});
 // iPhone keyboard: the capture bar sits above the bottom tabs. While the on-screen keyboard is open,
 // visualViewport shrinks; we lift the bar exactly above the keyboard (--kb) and hide the tabs.
 // Focus in any other field hides the bar so it never covers what is being typed.
